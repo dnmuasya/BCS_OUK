@@ -1,9 +1,14 @@
 ''' Checks a meal combo for 3 nutrients(Proteins, vitamins,carbs)'''
-import re;
+#import re;
 import from byllm.llm {Model}
 
 #glob llm = Model(model_name='gpt-4o', verbose=False);
 glob llm = Model(model_name='gemini/gemini-2.0-flash', verbose=False);
+
+#food groups
+#proteins = {'eggs', 'beans', 'chicken', 'beef', 'fish', 'lentils'};
+#carbs = {'rice', 'maize', 'bread', 'potatoes','pasta'};
+#vitamins = {'tomatoes', 'spinach','carrots', 'oranges', 'brocolli'};
 
 def give_hint(meal: str, balanced_diet: str) -> str by llm();
 
@@ -20,7 +25,7 @@ node turn {
 
 with entry:__main__ {
     root spawn MealChecker('rice, lentils, cabbage');
-    root spawn MealChecker('beans, mashed potatoes');
+    root spawn MealChecker('beans, potatoes, ');
     root spawn MealChecker('bread, steak, coffee');
 }
 
@@ -40,9 +45,11 @@ impl MealChecker.check_meal {
     } else {
         if self.meal < here.balanced_diet{
             print(give_hint(self.meal, here.balanced_diet));
+            print(f'Meal: {self.meal} : is not balanced diet!');
+            print('Hint: ', give_hint(self.meal, here.balanced_diet));
             here ++> turn(here.balanced_diet);
         } else {
-            print('A well balanced diet! Bon Appetite!!');
+            print(f'A well balanced diet in : {self.meal}: Bon Appetite!!');
             disengage;
             
         }
