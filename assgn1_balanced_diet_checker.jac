@@ -44,7 +44,7 @@ impl MealChecker.check_meal {
         visit [-->];
     } else {
         if self.meal < here.balanced_diet{
-            print(give_hint(self.meal, here.balanced_diet));
+            #print(give_hint(self.meal, here.balanced_diet));
             print(f'Meal: {self.meal} : is not balanced diet!');
             print('Hint: ', give_hint(self.meal, here.balanced_diet));
             here ++> turn(here.balanced_diet);
