@@ -18,7 +18,7 @@ obj GuessTheNumberGame (Game) {
         while self.attempts > 0 {
             guess = input('Guess a number between 1 and 10: ');
             if guess.isdigit(){
-                self.process_guess(int(guess));
+                self.process_guess(int(guess)); 
                 if self.won {
                     break;
                 }
