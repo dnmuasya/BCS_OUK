@@ -13,6 +13,18 @@ walker RepoDocGEn {
     has output_doc: str = '';
 }
 
+walker RunRepoMapper {
+    has git_url: str;
+    has dest_path: str;
+    can entry {
+        repo_mapper = spawn here ++> RepoMapper(git_url=self.git_url, dest_path=self.dest_path);
+        visit repo_mapper with clone;
+    }
+}
+
+with entry {
+    walker RunRepoMapper('https://github.com/username/repository.git', 'local_repo_folder');
+}
 # ---Main Entry ---
 can entry {
     report 'Starting Agentic Documentation Generator';

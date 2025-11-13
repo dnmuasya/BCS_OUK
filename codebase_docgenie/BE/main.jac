@@ -12,7 +12,6 @@ import graphviz;  #for graph visualization
 import os;  #for file and directory handling
 import git;  #for cloning Git repos
 import ast;  #for parsing Abstract Syntax Tree;
-from pathlib import Path;
 import from dotenv {load_dotenv}
 include main.impl
 
