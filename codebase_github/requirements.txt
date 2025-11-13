@@ -1,4 +1,4 @@
 jaclang
-python dotenv
+dotenv
 requests
 github
