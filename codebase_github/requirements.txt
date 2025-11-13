@@ -1,0 +1,4 @@
+jaclang
+python dotenv
+requests
+github
