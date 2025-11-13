@@ -29,7 +29,7 @@ node user {
     has password: str = '';
     }
 
-#Analyzes structure and README
+#Clones the URL github
 node RepoMapper {
     has github: str = os.getenv('GITHUB_URL');
 
@@ -49,16 +49,65 @@ node RepoMapper {
 
 }
 
+node FileStructureAnalyzer {
+
+    def analyze_file_structure(path: Any) {
+        file_structure = {};
+        for (<>root, dirs, files) in os.walk(path) {
+            file_structure[<>root] = files;
+            
+        } 
+        return file_structure;
+    }
+}
 #Parses and understands source code
-node CodeAnalyzer {
+node CodeAnalyzer { 
     
+    def analyze_code(file_path: Any) {
+        with open(file_path, 'r') as file {
+            <>node = ast.parse(file.read(), filename=file_path);
+
+        }
+        functions = [];
+        classes = [];
+        for item in <>node.body {
+            if isinstance(item, ast.FunctionDef) {
+                functions.append(item.name);
+            } elif isinstance(item, ast.ClassDef) {
+                classes.append(item.name);
+            }
+
+        }
+        return (functions, classes); # returns as a tuple for both functions and classes
+    }
 }
 
-#Produces the documentation and diagrams
+#Produces the markdown documentation and diagrams
 node DocGenie {
-    has created_at: str;
+
     has documentation: str = '';
     has graphs: str = ''; # integrates visual diagrams
+
+    def generate_markdown_documentation(file_structure: Any, analysis_results: Any, output_file: Any) 
+    {
+        with open(output_file, 'w') as md_file {
+            md_file.write('# Project Documentation\n\n');
+            md_file.write('## File Structure\n');
+            for (directory, files) in file_structure.items() {
+                md_file.write(f' ## {directory} \n');
+
+                for file in files {
+                    md_file.write(f' - {file} \n');
+                }
+            }
+            md_file.write('\n## Code Relationshipa\n');
+            for result in analysis_results {
+                md_file.write(f' - {result} \n');
+            }
+        }
+        #where the documentation has been generated
+        print(f'Documentation generated at {output_file}');
+    }
 }
 
 
