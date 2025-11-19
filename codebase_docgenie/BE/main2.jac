@@ -40,10 +40,11 @@ node user {
 #Clones the URL github
 node RepoMapper {
     has git_url: str = '';
-    has dest_path: path;
+    has dest_path: str;
     has last_repo_path: str='';
 
     can clone using root {
+
         py:
             import os
             import git
@@ -58,13 +59,15 @@ node RepoMapper {
                 try:
                     print(f'Cloning {git_url} into {dest}')
                     git.Repo.clone_from(git_url, str(dest))
-                    return str(dest);
+                    return str(dest)
                 except Exception as e:
                     raise RuntimeError(f'Failed to clone repo: {e}')
 
             #call the helper using visitor-provided inputs
-            self.last_repo_path =py::clone_repo(visitor.git_url, visitor.dest_path)     
-        -> 
+            self.last_repo_path = clone_repo(visitor.git_url, visitor.dest_path)    
+        ->  
+
+            
             #after the python block completes we are back in Jac scope
             print('RepoMapper: cloned -> ', self.last_repo_path);
 
@@ -74,7 +77,7 @@ node RepoMapper {
 }
 
 #File Structure Analyzer
-node FileStructureAnalyzer{
+node FileStructureAnalyzer {
     has repo_path: str;
     has structure: dict = {};
 
@@ -117,6 +120,7 @@ node CodeAnalyzer {
             functions = [];
             classes = [];
             p = Path(file_path)
+
             if not p.exists():
                 return functions, classes
             try:
@@ -134,9 +138,10 @@ node CodeAnalyzer {
                     with open(file_path, 'r') as f:
                         lines = f.readlines()
                         for line in lines:
-                            if line.strip().startswith('def '):
-                                functions.append(line.split()[1])
-                            elif line.strip().startswith('node '):
+                            s = line.strip()
+                            if s.startswith('def '):
+                                functions.append(s.split()[1])
+                            elif s.startswith('node '):
                                 classes.append(line.split()[1])
             
             except Exception as e:
@@ -144,7 +149,7 @@ node CodeAnalyzer {
                 return functions, classes
             return functions, classes
     
-        self.functions, self.classes = analyze_code(silf.file_path)
+        self.functions, self.classes = analyze_code(self.file_path)
     ->
         print('CodeAnalyzer:', visitor.file_path, '-> functions', len(self.functions), 'classes:', len(self.classes));
     }
@@ -169,21 +174,24 @@ node DocGenie{
 
                         for file in files: 
                             md_file.write(f' - {file} \n')
-                
+                        md_file.write('\n')
             
                     md_file.write('\n## Code Relationships\n')
-                    for result in analysis_results {
-                        md_file.write(f' - {result} \n')
-                        if result[''classes]:
+                    for entry in analysis_results:
+                        file = entry.get('file', 'UNKOWN')
+                        md_file.write(f' - {file} \n')
+                        if entry.get('classes'):
                             md.write(f' - Classes: {', '.join(entry['classes'])}\n')
-                        if result['functions']:
+                        if entry.get('functions'):
                             md.write(f' - Functions: {', '.join(entry['functions'])}\n')
-                    md.write(f'\n ##Structure Diagram\n![Diagram]({diagram_path})\n')
+                    md.write(f'\n ##Structure Diagram\n')
+                    md.write(f'![Diagram]({diagram_path})\n')
             
         
                 #where the documentation has been generated
                 print(f'Documentation generated at {output_file}')
                 return output_file
+            }
         -> 
 
             self.output_file = write_markdown(
@@ -192,9 +200,8 @@ node DocGenie{
                 visitor.diagram_path,
                 self.output_file
             );
-        }
-    }
-}    
+}  
+
 
 node DiagramGenerator {
     has file_structure: dict = {};
@@ -202,6 +209,7 @@ node DiagramGenerator {
     has diagram_file: str = 'structure_diagram.svg';
 
     can build using root {
+
         py: 
 
             import graphviz
@@ -209,23 +217,32 @@ node DiagramGenerator {
                 ''' Build a visual code structure diagram with Graphviz.''';
                 st.info('💭Generating visual code diagram...');
                 dot = graphviz.Digraph(comment='Code Structure', format='svg');
+
+                #folders and files
                 for folder, files in file_structure.items():
-                    dot.node(folder, label=f'📁 {folder}');
+                    folder_id = folder or 'root'
+                    dot.node(folder_id, label=f'📁 {folder_id}');
+
                     for f in files :
-                        node_name = f'{folder}/{f}'
-                        dot.node(node_name, label=f)
-                        dot.edge(folder, node_name)
+                        file__id = f'{folder_id}/{f}'
+                        dot.node(file_id, label=f)
+                        dot.edge(folder_id, file_id)
                     
-                
-                for entry in analysis_results {
-                    file = entry.get('file');
+                #functions and classes
+                for entry in analysis_results:
+                    file = entry.get('file')
+                    if not file:
+                        continue
+
                     for func in entry.get('functions', []):
-                        dot.node(f'{file}/{func}', label=f'📦 {func}', shape='box');
-                        dot.edge(file, f'{file}/{func}')
+                        func_id = f'{file}/{func}'
+                        dot.node(func_id, label=f'📦 {func}', shape='box');
+                        dot.edge(file, func_id)
                     }
                     for cls in entry.get('classes', []):
-                        dot.node(f'{file}.{cls}', label=f'🏷{cls}', shape='ellipse')
-                        dot.edge(file, f'{file}/{cls}')
+                        cls_id = f'{file}/{cls}'
+                        dot.node(cls_id, label=f'🏷{cls}', shape='ellipse')
+                        dot.edge(file, cls_id)
                 
             
                 dot.render(DIAGRAM_PATH, cleanup=True);
@@ -234,11 +251,11 @@ node DiagramGenerator {
             self.diagram_file = generate_diagram(
                 visitor.file_structure, visitor.analysis_results, 'structure_diagram'
             );
-    
+        }   
     }
-
-
 }
+
+
  
 node LLMDocGenerator {
     has model_name: str = 'gemini/gemini-2.5-flash';
