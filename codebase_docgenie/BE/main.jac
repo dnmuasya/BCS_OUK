@@ -13,7 +13,7 @@ import os;  #for file and directory handling
 import git;  #for cloning Git repos
 import ast;  #for parsing Abstract Syntax Tree;
 import from dotenv {load_dotenv}
-include main.impl
+
 
 #Load environment variables from .env file;
 glob env_loaded = load_dotenv();
@@ -72,7 +72,7 @@ node FileStructureAnalyzer {
         } 
         return file_structure;
 
-    self.structure = scan_structure(visitor.repo_path);   
+    self.structure = scan_structure(self.repo_path);   
     }
 
 }
@@ -133,9 +133,9 @@ node DocGenie {
         return output_file;
 
     self.output_file = write_markdown(
-        visitor.file_structure,
-        visitor.analysis_results,
-        visitor.diagram_path,
+        self.file_structure,
+        self.analysis_results,
+        self.diagram_path,
         self.output_file
     );
     }
@@ -148,7 +148,7 @@ node DiagramGenerator {
 
     def generate_code_diagram(file_structure: Any, analysis_results: Any) {
         ''' Build a visual code structure diagram with Graphviz.''';
-        st.info('💭Generating visual code diagram...');
+        #st.info('💭Generating visual code diagram...');
         dot = graphviz.Digraph(comment='Code Structure', format='svg');
         for (folder, files) in file_structure.items() {
             dot.node(folder, label=f'📁 {folder}');
@@ -185,7 +185,7 @@ node DiagramGenerator {
                     {'role':'system', 'content':'You are a documentation assistant'},
                     {'role':'user', 'content':f'Summarize this codebase:\n{code_summary}'}
                 ],
-                temparature=0.5,
+                temperature=0.5,
             )
             return response.choices[0].messages.content.strip();
         }
@@ -195,5 +195,12 @@ node DiagramGenerator {
     }
 }
 
+with entry {
+    obj = spawn here ++> RepoMapper();
+    obj.git_url = 'https://github.com/dnmuasya/BCS_OUK.git';
+    obj.dest_path = '.temp_repo';
 
+    visit obj with clone
+}
+    
 
