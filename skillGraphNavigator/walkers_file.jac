@@ -13,7 +13,7 @@ walker validate_user_entries_walker {
     }
 
     can validate_new_user with `root entry {
-        if len(self.firstname) < 0 {
+        if len(self.firstname) < 2 {
             try {
                 raise ValueError('Enter a valid name') ;
             } except ValueError as e {
@@ -34,8 +34,9 @@ walker validate_user_entries_walker {
             return;
         }
 
-        if len(self.password) < 6 and len(self.password) > 12 {
+        if len(self.password) < 6 or len(self.password) > 12 {
             report {'error': 'Password must be between 6 to 12 characters!'} ;
+            return;
         }
         visit [-->];
     }
